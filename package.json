@@ -1,0 +1,21 @@
+{
+  "name": "llm-tokenization-3d-embedding-visualizer",
+  "version": "1.0.0",
+  "description": "Interactive educational website demonstrating LLM Tokenization, Vocabulary IDs, and 3D Vector Embeddings",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.mjs"
+  },
+  "keywords": [
+    "llm",
+    "tokenization",
+    "threejs",
+    "embeddings",
+    "transformers",
+    "pca",
+    "cosine-similarity"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Tokenization & 3D Embedding Visualizer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <!-- Futuristic Dashboard Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <div class="brand-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">LLM Tokenization &amp; 3D Embedding Visualizer</h1>
+          <span class="brand-badge">College AI/ML Research Studio</span>
+        </div>
+      </div>
+
+      <div class="header-status-group">
+        <div id="model-status-badge" class="status-badge">
+          <span class="status-dot ready"></span>
+          <span class="status-text">Loading Model Architecture...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="main-content">
+
+    <!-- ====================================================================
+         SECTION 1: TEXT INPUT
+         ==================================================================== -->
+    <section id="section-input" class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="section-num">01</span>
+          <div>
+            <h2 class="panel-title">Raw Text Input</h2>
+            <p class="panel-subtitle">Enter arbitrary text, sentences, or paragraphs to process through the model pipeline</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-section-body">
+        <div class="textarea-container">
+          <textarea 
+            id="text-input" 
+            class="custom-textarea" 
+            placeholder="Type your text here, or click one of the preset example buttons below..."
+            rows="3"
+            spellcheck="false"
+          >The king and queen are ruling the kingdom</textarea>
+        </div>
+
+        <!-- Interactive Token Highlight Stream -->
+        <div class="interactive-text-stream-wrapper">
+          <div class="stream-header">
+            <span class="stream-label">Synchronized Character-to-Token Highlighter:</span>
+            <span class="stream-hint">Hover or click any span below to link with tokens and 3D space</span>
+          </div>
+          <div id="interactive-text-stream" class="interactive-text-stream"></div>
+        </div>
+
+        <div class="action-bar">
+          <div class="examples-group">
+            <span class="examples-label">Presets:</span>
+            <button class="example-btn" data-text="Hello world">Hello world</button>
+            <button class="example-btn" data-text="Artificial Intelligence is amazing">Artificial Intelligence is amazing</button>
+            <button class="example-btn" data-text="The king and queen are ruling the kingdom">The king and queen are ruling the kingdom</button>
+            <button class="example-btn" data-text="Unbelievable things happen unexpectedly">Unbelievable things happen unexpectedly</button>
+            <button class="example-btn" data-text="The car is faster than the bicycle">The car is faster than the bicycle</button>
+            <button class="example-btn" data-text="cat bat hat dog car">Cat Bat Hat Dog Car</button>
+            <button class="example-btn" data-text="king queen prince princess apple banana car vehicle">King Queen Apple Banana</button>
+          </div>
+
+          <div class="btn-group">
+            <button id="btn-reset" class="btn-secondary" title="Clear input and reset visualizer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+              Reset
+            </button>
+            <button id="btn-process" class="btn-primary" title="Tokenize and generate vector embeddings">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Process Text
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: TOKENIZATION RESULTS
+         ==================================================================== -->
+    <section id="section-tokens" class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="section-num">02</span>
+          <div>
+            <h2 class="panel-title">Tokenization Results (GPT-2 BPE)</h2>
+            <p class="panel-subtitle">Discrete subword units segmented with Byte-Pair Encoding; hover or click to highlight across sections</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Banner -->
+      <div class="stats-banner">
+        <div class="stat-card">
+          <span class="stat-label">Total Tokens</span>
+          <span id="stat-token-count" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Character Count</span>
+          <span id="stat-char-count" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Word Count</span>
+          <span id="stat-word-count" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Chars / Token Ratio</span>
+          <span id="stat-ratio" class="stat-value">0.00</span>
+        </div>
+      </div>
+
+      <!-- Tokens Output Area -->
+      <div id="tokens-container" class="tokens-display-area">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3: VOCABULARY MAPPING TABLE
+         ==================================================================== -->
+    <section id="section-vocab" class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="section-num">03</span>
+          <div>
+            <h2 class="panel-title">Vocabulary Mapping Table</h2>
+            <p class="panel-subtitle">Integer indices mapping subword strings into the fixed tokenizer dictionary</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="vocab-toolbar">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="vocab-search" placeholder="Search tokens or IDs..." autocomplete="off">
+        </div>
+
+        <div class="btn-group">
+          <button id="btn-export-json" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Download Token & Vector data as JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export JSON
+          </button>
+          <button id="btn-export-csv" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Download Vocabulary Table as CSV">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll-container">
+        <table class="vocab-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Pos #</th>
+              <th>Token (Decoded Text)</th>
+              <th style="width: 140px;">Token ID (GPT-2)</th>
+              <th style="width: 180px;">Token Color</th>
+              <th style="width: 120px;">Embedding</th>
+            </tr>
+          </thead>
+          <tbody id="vocab-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="educational-callout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span><strong>Educational Note:</strong> A token ID is a discrete numerical identifier assigned to a token in the tokenizer's vocabulary. It does not directly represent the meaning or semantics of the word. Meaning is encoded only when mapped into high-dimensional vector embeddings.</span>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: 3D VECTOR EMBEDDING VISUALIZATION
+         ==================================================================== -->
+    <section id="section-embeddings" class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="section-num">04</span>
+          <div>
+            <h2 class="panel-title">3D Vector Embedding Space</h2>
+            <p class="panel-subtitle">Interactive 3D coordinate system projecting 384-dimensional Sentence Transformer vectors via PCA</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="visualizer-main-grid">
+        
+        <!-- Left: 3D Coordinate Canvas & Controls -->
+        <div class="visualizer-stage-column">
+          
+          <div class="visualizer-toolbar">
+            <div class="mode-toggle-group">
+              <button id="mode-semantic" class="mode-btn active" title="Cluster by conceptual meaning using 384D cosine similarity">
+                Semantic Similarity
+              </button>
+              <button id="mode-spelling" class="mode-btn" title="Cluster by spelling using Normalized Levenshtein distance">
+                Spelling Similarity
+              </button>
+            </div>
+
+            <div class="btn-group">
+              <button id="btn-toggle-heatmap" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="View Pairwise Cosine Similarity Heatmap Matrix">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Similarity Matrix
+              </button>
+              <button id="btn-reset-camera" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Reset 3D camera to default viewpoint">
+                Reset View
+              </button>
+              <button id="btn-auto-rotate" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Toggle 360 degree rotation">
+                Auto-Rotate
+              </button>
+              <button id="btn-toggle-labels" class="btn-secondary active" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Show or hide floating text labels">
+                Labels
+              </button>
+              <button id="btn-toggle-grid" class="btn-secondary active" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Show or hide 3D coordinate grid">
+                Grid
+              </button>
+            </div>
+          </div>
+
+          <!-- 3D Canvas Viewport -->
+          <div id="viewport-3d" class="viewport-3d-container">
+            <!-- Three.js Canvas injected here -->
+
+            <!-- HUD Overlay -->
+            <div class="hud-overlay">
+              <div id="variance-badge" class="hud-badge">
+                <span class="badge-icon">⚡</span>
+                <span>PCA Variance Explained: <strong>--%</strong> (384D → 3D)</span>
+              </div>
+              <span class="hud-controls-hint">Drag: Rotate | Wheel: Zoom | Right-Drag: Pan | Click: Select Point</span>
+            </div>
+
+            <!-- Floating 3D Tooltip -->
+            <div id="tooltip-3d" class="tooltip-3d"></div>
+          </div>
+
+          <div id="mode-description" class="mode-banner">
+            <strong>Mode: Semantic Similarity</strong> — Positions points using PCA projection of real 384-dimensional Sentence Transformer vectors. Words with related meanings (e.g. <em>King &amp; Queen</em>) cluster together.
+          </div>
+        </div>
+
+        <!-- Right: Word Comparison & Selected Word Information Panels -->
+        <div class="visualizer-side-column">
+          
+          <!-- Word Comparison Tool -->
+          <div class="side-subpanel">
+            <div class="subpanel-header">
+              <span class="subpanel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Word Comparison Tool
+              </span>
+            </div>
+
+            <div class="compare-selectors-grid">
+              <select id="compare-select-a" class="compare-select"></select>
+              <span class="compare-vs">vs</span>
+              <select id="compare-select-b" class="compare-select"></select>
+            </div>
+
+            <!-- Cosine Similarity Metric -->
+            <div class="score-metric-box">
+              <div class="metric-header">
+                <span class="metric-title">Semantic (Cosine) Similarity</span>
+                <span id="cosine-score-val" class="metric-val">+0.000</span>
+              </div>
+              <div class="metric-progress-track">
+                <div id="cosine-score-bar" class="metric-progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Spelling Similarity Metric -->
+            <div class="score-metric-box">
+              <div class="metric-header">
+                <span class="metric-title">Spelling (Levenshtein) Similarity</span>
+                <span id="spelling-score-val" class="metric-val">0.000 (0%)</span>
+              </div>
+              <div class="metric-progress-track">
+                <div id="spelling-score-bar" class="metric-progress-fill spelling" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div id="comparison-insight" class="comparison-insight-box">
+              Select two words to compare their semantic and spelling relationships.
+            </div>
+          </div>
+
+          <!-- Selected Word Information Panel -->
+          <div class="side-subpanel" style="flex: 1;">
+            <div class="subpanel-header">
+              <span class="subpanel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+                Word Vector Profile
+              </span>
+            </div>
+
+            <div id="word-info-empty" class="empty-info-msg">
+              Click any point in the 3D space or a token chip to inspect its high-dimensional vector.
+            </div>
+
+            <div id="word-info-content" class="word-info-card" style="display: none;">
+              <div class="word-title-row">
+                <span id="info-word-title" class="selected-word-name">Word</span>
+                <span id="info-token-id" class="token-id-code">#00000</span>
+              </div>
+
+              <div class="vector-properties-grid">
+                <div class="prop-item">
+                  <span class="prop-label">Original Space</span>
+                  <span id="info-vector-dim" class="prop-val">384 Dimensions</span>
+                </div>
+                <div class="prop-item">
+                  <span class="prop-label">L2 Unit Norm</span>
+                  <span id="info-vector-norm" class="prop-val">1.000</span>
+                </div>
+                <div class="prop-item" style="grid-column: span 2;">
+                  <span class="prop-label">Value Range [Min, Max]</span>
+                  <span id="info-vector-minmax" class="prop-val">[-0.15, +0.18]</span>
+                </div>
+              </div>
+
+              <div>
+                <span class="prop-label" style="font-size: 0.72rem; text-transform: uppercase;">Numerical Values Preview (First 16 Dims):</span>
+                <div id="info-vector-preview" class="vector-preview-box"></div>
+              </div>
+
+              <div>
+                <span class="prop-label" style="font-size: 0.72rem; text-transform: uppercase;">Vector Magnitude Heatmap:</span>
+                <div id="info-vector-heatmap" class="vector-heatmap-strip"></div>
+              </div>
+
+              <div>
+                <span class="prop-label" style="font-size: 0.72rem; text-transform: uppercase; margin-bottom: 0.35rem; display: block;">Top-K Nearest Neighbors (In Text):</span>
+                <ul id="info-neighbors-list" class="neighbors-list"></ul>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5: COMPLETE LLM PROCESSING PIPELINE
+         ==================================================================== -->
+    <section id="section-pipeline" class="panel pipeline-section">
+      <div class="panel-header" style="background: transparent; padding: 0 0 1.5rem 0;">
+        <div class="panel-title-wrap">
+          <span class="section-num">05</span>
+          <div>
+            <h2 class="panel-title">End-to-End LLM Processing Pipeline</h2>
+            <p class="panel-subtitle">How human language transforms into machine-readable mathematical representations</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-grid">
+        
+        <div class="pipeline-step" data-target="section-input">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 1</span>
+            <span class="step-icon">📝</span>
+          </div>
+          <h3 class="step-title">Raw Text Input</h3>
+          <p class="step-desc">Natural human text consisting of characters, words, sentences, punctuation, and Unicode strings.</p>
+          <span class="step-badge">String / UTF-8</span>
+        </div>
+
+        <div class="pipeline-step" data-target="section-tokens">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 2</span>
+            <span class="step-icon">✂️</span>
+          </div>
+          <h3 class="step-title">Tokenization</h3>
+          <p class="step-desc">Byte-Pair Encoding (BPE) segments words into frequent subword units, preserving morphology and handling rare words gracefully.</p>
+          <span class="step-badge">BPE Subwords</span>
+        </div>
+
+        <div class="pipeline-step" data-target="section-vocab">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 3</span>
+            <span class="step-icon">🔢</span>
+          </div>
+          <h3 class="step-title">Vocabulary IDs</h3>
+          <p class="step-desc">Tokens are mapped to arbitrary integer indices in the model's fixed dictionary (e.g. GPT-2's 50,257 vocabulary entries).</p>
+          <span class="step-badge">Discrete Integers</span>
+        </div>
+
+        <div class="pipeline-step" data-target="section-embeddings">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 4</span>
+            <span class="step-icon">🌐</span>
+          </div>
+          <h3 class="step-title">Vector Embeddings</h3>
+          <p class="step-desc">Token IDs are looked up in an embedding matrix ($\mathbf{E} \in \mathbb{R}^{V \times D}$), producing dense continuous vectors that capture semantic meaning.</p>
+          <span class="step-badge">384-D / 768-D Vectors</span>
+        </div>
+
+        <div class="pipeline-step" data-target="section-embeddings">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 5</span>
+            <span class="step-icon">🧠</span>
+          </div>
+          <h3 class="step-title">Transformer Layers</h3>
+          <p class="step-desc">Multi-Head Self-Attention allows tokens to attend to each other, updating their vector representations based on the surrounding context.</p>
+          <span class="step-badge">Attention / Feed-Forward</span>
+        </div>
+
+        <div class="pipeline-step" data-target="section-embeddings">
+          <div class="pipeline-step-header">
+            <span class="step-num-pill">Stage 6</span>
+            <span class="step-icon">🎯</span>
+          </div>
+          <h3 class="step-title">Output Prediction</h3>
+          <p class="step-desc">Final layer projects contextual vectors through an LM head and Softmax to predict the probability distribution over all vocabulary tokens.</p>
+          <span class="step-badge">Softmax Probabilities</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pairwise Similarity Matrix Modal -->
+  <div id="matrix-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="badge-icon">📊</span>
+          <h3 class="modal-title">Pairwise Semantic &amp; Spelling Similarity Matrix</h3>
+        </div>
+        <button id="btn-close-matrix" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Compare every token against every other token in the sentence. Cells show high-dimensional <strong>Cosine Similarity</strong> on top, with <strong>Normalized Levenshtein</strong> in parentheses.
+        </p>
+        <div id="matrix-table-container" class="matrix-table-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline Deep Dive Modal -->
+  <div id="pipeline-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span id="pipeline-modal-icon" class="badge-icon">🧠</span>
+          <h3 id="pipeline-modal-title" class="modal-title">Stage Deep Dive</h3>
+        </div>
+        <button id="btn-close-pipeline-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div id="pipeline-modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p><strong>Interactive LLM Tokenization &amp; 3D Embedding Visualizer</strong> &bull; College AI/ML Educational Project</p>
+    <p style="margin-top: 0.35rem; font-size: 0.78rem;">Powered by Three.js, Transformers.js (Sentence Transformers all-MiniLM-L6-v2), GPT-2 BPE, and Principal Component Analysis (PCA).</p>
+  </footer>
+
+  <!-- Application Entry Point (Universal Standalone Bundle) -->
+  <script src="js/bundle.js"></script>
+</body>
+</html>
